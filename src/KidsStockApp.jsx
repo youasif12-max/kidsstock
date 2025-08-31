@@ -1,4 +1,4 @@
-// src/KidsStockApp-v2.jsx
+// src/KidsStockApp.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +10,7 @@ import {
 const Button = ({ className = "", ...props }) => (
   <button
     type="button"
-    className={`px-4 py-2 rounded-xl font-medium bg-transparent appearance-none focus:outline-none ${className}`}
+    className={`px-4 py-2 rounded-xl font-medium bg-transparent appearance-none focus:outline-none focus:ring-0 ${className}`}
     {...props}
   />
 );
@@ -149,7 +149,7 @@ export default function KidsStockApp() {
   const [alert, setAlert] = useState(null);
   const [selectedStock, setSelectedStock] = useState(null);
 
-  // 알림 3초 후 자동 닫힘
+  // 알림 2.5초 후 자동 닫힘
   useEffect(() => {
     if (!alert) return;
     const t = setTimeout(() => setAlert(null), 2500);
@@ -247,7 +247,14 @@ export default function KidsStockApp() {
         <div className={`m-3 ${panel} p-2 ${goldRing} bg-slate-900/70 pointer-events-auto`}>
           <div className="grid grid-cols-6 gap-1">
             {boardTiles.map(({ key, label, icon: Icon }) => (
-              <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`group flex flex-col items-center justify-center rounded-xl p-2 sm:p-3 ${tab === key ? "bg-amber-400/15 ring-1 ring-amber-300/40" : "hover:bg-white/5"} transition`}>
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => setTab(key)}
+                className={`bg-transparent group flex flex-col items-center justify-center rounded-xl p-2 sm:p-3 ${tab === key ? "bg-amber-400/15 ring-1 ring-amber-300/40" : "hover:bg-white/5"} transition`}
+              >
                 <Icon className={`h-5 w-5 ${tab === key ? "text-amber-300" : "text-slate-300 group-hover:text-slate-200"}`} />
                 <span className={`mt-1 text-[11px] ${tab === key ? "text-amber-200" : "text-slate-300/80"}`}>{label}</span>
               </button>
@@ -263,7 +270,7 @@ export default function KidsStockApp() {
             initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
             <motion.div className={`${panel} p-6 max-w-lg w-full relative`}
               initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}}>
-              <button className="absolute top-3 right-3 p-1 hover:bg-white/10 rounded" onClick={()=>setSelectedStock(null)}>
+              <button className="absolute top-3 right-3 p-1 hover:bg-white/10 rounded bg-transparent" onClick={()=>setSelectedStock(null)}>
                 <X className="text-slate-200" />
               </button>
               <h2 className="text-xl font-bold mb-2">{selectedStock.name}</h2>
@@ -284,7 +291,7 @@ export default function KidsStockApp() {
                 })()}
               </svg>
 
-              {/* 해당 종목 관련 뉴스만 노출 */}
+              {/* 해당 종목 관련 뉴스 */}
               <div className="mt-4 text-sm text-slate-300">
                 관련 뉴스: {
                   newsPool.filter(n => typeof n.effect === "object" && n.effect[selectedStock.symbol])
@@ -351,7 +358,11 @@ function BoardTile({ title, subtitle, right, children }) {
 }
 function MenuTile({ icon: Icon, label, onClick }) {
   return (
-    <button type="button" onClick={onClick} className={`group ${panel} ${goldRing} p-5 text-left transition hover:translate-y-[-2px] pointer-events-auto`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`bg-transparent group ${panel} ${goldRing} p-5 text-left transition hover:translate-y-[-2px] pointer-events-auto`}
+    >
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 ring-1 ring-white/10">
           <Icon className="h-6 w-6 text-amber-300" />
@@ -431,7 +442,14 @@ function QuizView({ onCorrect }) {
             const isCorrect = status !== "idle" && i === card.correct;
             const isWrongSel = status === "wrong" && isSel;
             return (
-              <button key={i} type="button" onClick={() => choose(i)} className={`rounded-xl px-4 py-3 text-left ring-1 transition ${isCorrect ? "bg-emerald-500/20 ring-emerald-300/30 text-emerald-200" : ""} ${isWrongSel ? "bg-rose-500/20 ring-rose-300/30 text-rose-200" : ""} ${!isCorrect && !isWrongSel ? "bg-slate-900/60 ring-white/10 hover:bg-white/5" : ""}`}>{ch}</button>
+              <button
+                key={i}
+                type="button"
+                className={`bg-transparent rounded-xl px-4 py-3 text-left ring-1 transition ${isCorrect ? "bg-emerald-500/20 ring-emerald-300/30 text-emerald-200" : ""} ${isWrongSel ? "bg-rose-500/20 ring-rose-300/30 text-rose-200" : ""} ${!isCorrect && !isWrongSel ? "bg-slate-900/60 ring-white/10 hover:bg-white/5" : ""}`}
+                onClick={() => choose(i)}
+              >
+                {ch}
+              </button>
             );
           })}
         </div>
