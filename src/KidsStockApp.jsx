@@ -3,17 +3,22 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home, BookOpen, HelpCircle, LineChart, Library, Settings,
-  Coins, Sparkles, Trophy, Star, ArrowRight, CheckCircle2, X
+  Coins, Sparkles, Trophy, Star, ArrowRight, CheckCircle2, X, Play, BookOpenCheck, Award
 } from "lucide-react";
 
 /* ----------------------------- 공통 UI ---------------------------------- */
-const Button = ({ className = "", ...props }) => (
-  <button
-    type="button"
-    className={`px-4 py-2 rounded-xl font-medium bg-transparent appearance-none focus:outline-none focus:ring-0 ${className}`}
-    {...props}
-  />
-);
+const Button = ({ className = "", variant = "solid", ...props }) => {
+  const base = "px-4 py-2 rounded-xl font-medium transition focus:outline-none focus:ring-2 focus:ring-amber-300/30";
+  const styles = {
+    solid: "bg-amber-400 text-slate-900 hover:bg-amber-300",
+    ghost: "bg-transparent text-slate-100 hover:bg-white/5",
+    dark:  "bg-slate-800 text-slate-100 hover:bg-slate-700 ring-1 ring-white/10",
+    danger:"bg-rose-500 text-white hover:bg-rose-400",
+    success:"bg-emerald-500 text-white hover:bg-emerald-400",
+    indigo:"bg-indigo-500 text-white hover:bg-indigo-400",
+  };
+  return <button type="button" className={`${base} ${styles[variant]} ${className}`} {...props} />;
+};
 const Card = ({ className = "", children }) => (
   <div className={`rounded-2xl border border-white/10 bg-slate-900/50 ${className}`}>{children}</div>
 );
@@ -52,25 +57,122 @@ function deltaStats(cur, prev) {
   return { diff: cur - prev, pct: prev ? ((cur - prev) / prev) * 100 : 0 };
 }
 
-/* ----------------------------- 데이터 ----------------------------------- */
-const lessonCards = [
-  { id: 1, title: "돈은 어디서 올까요?", chips: ["기초", "생활"], progress: 60 },
-  { id: 2, title: "주가가 오르락내리락", chips: ["원리", "그래프"], progress: 20 },
-  { id: 3, title: "용돈 투자 계획 세우기", chips: ["습관", "목표"], progress: 0 },
+/* ----------------------------- “강의” 데이터 (풍성 버전) ------------------- */
+// 각 레슨은 여러 섹션을 가짐. 섹션마다 본문/예시/미션 포함
+const LESSONS = [
+  {
+    id: 1,
+    title: "돈은 어디서 올까요?",
+    tags: ["기초", "생활"],
+    reward: 50,
+    sections: [
+      {
+        h: "1) 돈의 3가지 길",
+        body: "일해서 받는 돈(근로소득), 빌려주고 받는 돈(이자), 내가 가진 것에서 나오는 돈(배당·임대료)이 있어요.",
+        example: "예: 편의점에서 일하면 시급을 받아요. 은행에 돈을 맡기면 이자를 받아요. 주식을 가지고 있으면 배당금을 받을 때도 있어요.",
+        mission: "집에서 돈을 벌 수 있는 방법 1가지를 가족과 이야기해보고 적어보기."
+      },
+      {
+        h: "2) ‘저축→투자’의 차이",
+        body: "저축은 돈을 안전하게 모으는 것, 투자는 돈이 자라도록 기회를 주는 거예요.",
+        example: "돼지저금통에 넣으면 안전하지만 안 자라요. 주식은 위험도 있지만 시간이 지나면 성장할 수 있어요.",
+        mission: "내 용돈에서 저축 70%, 투자 30%처럼 비율을 정해보기."
+      },
+      {
+        h: "3) 시간 친구 ‘복리’",
+        body: "복리는 이자가 이자를 낳는 마법! 길게 기다릴수록 효과가 커져요.",
+        example: "1000코인에 매년 10%라면 1년 뒤 1100, 2년 뒤 1210처럼 점점 더 크게 늘어요.",
+        mission: "1000코인이 10%로 3년이면 얼마? (정답: 1331코인)"
+      },
+    ]
+  },
+  {
+    id: 2,
+    title: "주가가 오르락내리락",
+    tags: ["원리", "그래프"],
+    reward: 60,
+    sections: [
+      {
+        h: "1) 가격을 움직이는 힘",
+        body: "사고 싶은 사람이 많으면 가격↑, 팔고 싶은 사람이 많으면 가격↓.",
+        example: "신제품이 대박이면 모두 사고 싶어져서 가격이 오를 수 있어요.",
+        mission: "오늘 뉴스에서 ‘상승/하락’ 키워드 찾아보기."
+      },
+      {
+        h: "2) 그래프 읽기 기초",
+        body: "왼쪽이 과거, 오른쪽이 현재·미래. 위로 갈수록 가격이 비싸요.",
+        example: "계단처럼 오르내리는 선을 보며 추세(전반적 방향)를 확인해요.",
+        mission: "내가 좋아하는 회사 1곳의 1년 그래프를 찾아보고 느낀 점 적기."
+      },
+      {
+        h: "3) 변동성 다루기",
+        body: "매일 흔들려도, 좋은 회사를 오래 들고 가는 ‘장기투자’가 있어요.",
+        example: "롤러코스터 같은 날도 있지만 전체적으로는 성장할 수 있어요.",
+        mission: "가격이 떨어졌을 때의 장점 1가지를 말해보기."
+      },
+    ]
+  },
+  {
+    id: 3,
+    title: "용돈 투자 계획 세우기",
+    tags: ["습관", "목표"],
+    reward: 80,
+    sections: [
+      {
+        h: "1) 목표 세우기",
+        body: "무엇을 위해 모을까요? 새 자전거? 겨울 캠프? 목표가 있으면 꾸준해져요.",
+        example: "6개월 안에 3만 코인 모으기!",
+        mission: "내 목표 1개와 기간을 정해 노트에 쓰기."
+      },
+      {
+        h: "2) 분산투자",
+        body: "한 바구니에만 담지 않기! 여러 회사에 나눠 담으면 위험이 줄어요.",
+        example: "음료·게임·장난감·기술처럼 서로 다른 분야를 섞어요.",
+        mission: "내가 관심 있는 분야 3개를 고르고 이유 쓰기."
+      },
+      {
+        h: "3) 자동으로 꾸준히",
+        body: "정해진 날마다 같은 금액을 투자하면 마음이 덜 흔들려요(정기적립).",
+        example: "매주 200코인씩!",
+        mission: "나만의 요일/금액을 정해보기."
+      },
+    ]
+  },
 ];
 
+// 레슨 카드 미리보기(진도는 상태에서 관리)
+const lessonCards = LESSONS.map(l => ({ id: l.id, title: l.title, chips: l.tags, progress: 0 }));
+
+/* ----------------------------- 퀴즈 (확장) ------------------------------- */
 const quizDeck = [
   { q: "주식 한 주를 사면 무엇을 가지게 될까요?", choices: ["쿠폰", "회사 소유권의 일부", "게임 아이템"], correct: 1, tip: "주식=회사 조각!" },
-  { q: "가격이 떨어졌을 때 꼭 나쁜 걸까요?", choices: ["무조건 나빠요", "싸게 살 기회일 수 있어요", "가격이 고장난 거예요"], correct: 1, tip: "값이 내려가면 같은 돈으로 더 살 수도" },
-  { q: "분산투자는 왜 좋을까요?", choices: ["심심하니까", "한 바구니에만 담지 않아요", "더 멋져 보여서"], correct: 1, tip: "여러 곳에 나눠 담기" },
+  { q: "가격이 떨어졌을 때 꼭 나쁠까요?", choices: ["무조건 나빠요", "싸게 살 기회일 수 있어요", "가격이 고장났어요"], correct: 1, tip: "같은 돈으로 더 살 수도" },
+  { q: "분산투자가 좋은 이유는?", choices: ["심심하니까", "한 바구니에만 담지 않아요", "멋져보여서"], correct: 1, tip: "여러 곳에 나눠 담기" },
+  { q: "복리는 무엇일까요?", choices: ["이자가 또 이자를 낳는 것", "한 번만 이자", "이자 없음"], correct: 0, tip: "시간이 길수록 효과↑" },
+  { q: "그래프에서 오른쪽으로 갈수록 의미는?", choices: ["과거", "현재/미래", "모름"], correct: 1, tip: "왼쪽 과거, 오른쪽 현재/미래" },
+  { q: "가격을 올리는 힘은 대체로?", choices: ["팔고 싶은 사람 많을 때", "사고 싶은 사람 많을 때", "비밀"], correct: 1, tip: "수요↑ → 가격↑" },
+  { q: "장기투자의 장점은?", choices: ["매일 거래로 수수료↑", "흔들림을 줄이고 성장에 집중", "심심함"], correct: 1, tip: "큰 흐름 보자" },
+  { q: "저축과 투자의 차이는?", choices: ["같다", "저축=안전, 투자=성장기회", "투자=무조건 위험"], correct: 1, tip: "성격이 달라요" },
+  { q: "목표를 세우면 좋은 점은?", choices: ["금방 포기", "꾸준히 행동하기 쉬움", "돈이 줄어듦"], correct: 1, tip: "동기부여!" },
+  { q: "정기적립 방식은?", choices: ["그때그때 마음대로", "정해진 날 같은 금액", "없음"], correct: 1, tip: "꾸준함이 힘" },
+  { q: "분산투자 예시는?", choices: ["한 회사만 몰빵", "여러 분야로 나눔", "현금만 보유"], correct: 1, tip: "음료/게임/기술 등" },
+  { q: "배당은?", choices: ["회사 이익 나눔", "세금", "대출이자"], correct: 0, tip: "주주에게 이익 배분" },
+  { q: "가격이 흔들려도 할 일은?", choices: ["공포에 즉시 매도", "계획대로 장기 전략 점검", "모두 대출"], correct: 1, tip: "계획이 우선" },
+  { q: "그래프 읽기 기본은?", choices: ["색깔 보기만", "전반적 추세 파악", "감으로만"], correct: 1, tip: "방향을 보자" },
+  { q: "용돈에서 투자 비율을 정하는 이유는?", choices: ["재미", "흔들림 줄이고 습관 형성", "친구따라"], correct: 1, tip: "규칙 만들기" },
+  { q: "좋은 회사의 특징은?", choices: ["제품·서비스가 사랑받음", "비밀회사", "주주 미소"], correct: 0, tip: "실적/브랜드/성장" },
+  { q: "시장 전체가 오르는 날, 개별 주식은?", choices: ["항상 반대", "같이 오를 가능성↑", "모름"], correct: 1, tip: "상관관계가 있어요" },
+  { q: "가격 하락의 장점?", choices: ["없음", "더 낮은 가격에 매수 기회", "그래프가 예쁨"], correct: 1, tip: "기회가 될 수도" },
 ];
 
+/* ----------------------------- 용어 ------------------------------------- */
 const glossaryData = [
   { term: "주식", def: "회사 소유권의 조각." },
   { term: "배당", def: "이익을 주주에게 나눠주는 돈." },
   { term: "PER", def: "주가를 1주당 이익으로 나눈 값." },
 ];
 
+/* ----------------------------- 탭/주식 초기값 ---------------------------- */
 const boardTiles = [
   { key: "home", label: "홈", icon: Home },
   { key: "lesson", label: "수업", icon: BookOpen },
@@ -139,6 +241,12 @@ export default function KidsStockApp() {
   const [coins, setCoins] = useState(STARTING_COINS);
   const [streak, setStreak] = useState(3);
 
+  // 강의 진행/선택
+  const [lessonProgress, setLessonProgress] = useState(() =>
+    Object.fromEntries(LESSONS.map(l => [l.id, 0]))
+  );
+  const [activeLessonId, setActiveLessonId] = useState(null);
+
   // 모의투자 전역 상태
   const [stocks, setStocks] = useState(initialStocks);
   const [portfolio, setPortfolio] = useState({}); // symbol -> { qty, avg }
@@ -164,16 +272,33 @@ export default function KidsStockApp() {
   // 탭 매핑
   const VIEW_MAP = {
     home: HomeBoard,
-    lesson: LessonView,
+    lesson: LessonRouter,
     quiz: QuizView,
     invest: InvestView,
     glossary: GlossaryView,
     settings: SettingsView,
   };
+
   const viewProps = {
-    home: { onNavigate: setTab },
-    lesson: { onReward: () => setCoins((c) => c + 20) },
-    quiz: { onCorrect: () => { setCoins((c) => c + 30); setStreak((s) => s + 1); } },
+    home: {
+      onNavigate: (key) => setTab(key),
+      onStartLesson: (id) => { setActiveLessonId(id); setTab("lesson"); }
+    },
+    lesson: {
+      lessons: LESSONS,
+      progressMap: lessonProgress,
+      onOpen: (id) => setActiveLessonId(id),
+      activeLessonId,
+      onBackList: () => setActiveLessonId(null),
+      onComplete: (lessonId, reward) => {
+        setLessonProgress((m) => ({ ...m, [lessonId]: 100 }));
+        setCoins((c) => c + reward);
+        setAlert(`축하해요! 레슨 완료 보상 +${reward} 코인`);
+      }
+    },
+    quiz: {
+      onCorrect: () => { setCoins((c) => c + 30); setStreak((s) => s + 1); }
+    },
     invest: {
       coins, setCoins, stocks, setStocks, portfolio, setPortfolio,
       day, setDay, news, setNews, setAlert, setSelectedStock
@@ -181,8 +306,9 @@ export default function KidsStockApp() {
     glossary: {},
     settings: {},
   };
+
   const View = VIEW_MAP[tab] || HomeBoard;
-  const props = viewProps[tab] || { onNavigate: setTab };
+  const props = viewProps[tab] || {};
 
   return (
     <div className={appBg}>
@@ -253,7 +379,8 @@ export default function KidsStockApp() {
                 role="tab"
                 aria-selected={tab === key}
                 onClick={() => setTab(key)}
-                className={`bg-transparent group flex flex-col items-center justify-center rounded-xl p-2 sm:p-3 ${tab === key ? "bg-amber-400/15 ring-1 ring-amber-300/40" : "hover:bg-white/5"} transition`}
+                className={`group flex flex-col items-center justify-center rounded-xl p-2 sm:p-3 ${tab === key ? "bg-amber-400/15 ring-1 ring-amber-300/40" : "hover:bg-white/5"} transition`}
+                style={{ background: "transparent" }}
               >
                 <Icon className={`h-5 w-5 ${tab === key ? "text-amber-300" : "text-slate-300 group-hover:text-slate-200"}`} />
                 <span className={`mt-1 text-[11px] ${tab === key ? "text-amber-200" : "text-slate-300/80"}`}>{label}</span>
@@ -270,7 +397,7 @@ export default function KidsStockApp() {
             initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
             <motion.div className={`${panel} p-6 max-w-lg w-full relative`}
               initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}}>
-              <button className="absolute top-3 right-3 p-1 hover:bg-white/10 rounded bg-transparent" onClick={()=>setSelectedStock(null)}>
+              <button className="absolute top-3 right-3 p-1 hover:bg-white/10 rounded" onClick={()=>setSelectedStock(null)}>
                 <X className="text-slate-200" />
               </button>
               <h2 className="text-xl font-bold mb-2">{selectedStock.name}</h2>
@@ -309,7 +436,7 @@ export default function KidsStockApp() {
 }
 
 /* ----------------------------- Home ------------------------------------- */
-function HomeBoard({ onNavigate }) {
+function HomeBoard({ onNavigate, onStartLesson }) {
   return (
     <motion.section
       key="home"
@@ -329,8 +456,12 @@ function HomeBoard({ onNavigate }) {
           <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> 퀴즈 3문제 풀기</li>
           <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> 모의투자 1회 실행</li>
         </ul>
-        <Button className="mt-4 bg-amber-400 text-slate-900 hover:bg-amber-300" onClick={() => onNavigate("lesson")}>
-          시작하기
+        <Button
+          variant="solid"
+          className="mt-4"
+          onClick={() => onStartLesson(1)}
+        >
+          수업 듣기 & 코인 받기
         </Button>
       </BoardTile>
 
@@ -358,11 +489,7 @@ function BoardTile({ title, subtitle, right, children }) {
 }
 function MenuTile({ icon: Icon, label, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`bg-transparent group ${panel} ${goldRing} p-5 text-left transition hover:translate-y-[-2px] pointer-events-auto`}
-    >
+    <button type="button" onClick={onClick} className={`group ${panel} ${goldRing} p-5 text-left transition hover:translate-y-[-2px] pointer-events-auto`} style={{ background: "transparent" }}>
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 ring-1 ring-white/10">
           <Icon className="h-6 w-6 text-amber-300" />
@@ -377,24 +504,39 @@ function MenuTile({ icon: Icon, label, onClick }) {
   );
 }
 
-/* ----------------------------- Lesson ----------------------------------- */
-function LessonView({ onReward }) {
+/* ----------------------------- Lesson Router/List/Detail ----------------- */
+function LessonRouter({ lessons, progressMap, activeLessonId, onOpen, onBackList, onComplete }) {
+  if (activeLessonId) {
+    const lesson = lessons.find(l => l.id === activeLessonId);
+    return (
+      <LessonDetailView
+        lesson={lesson}
+        progress={progressMap[activeLessonId] ?? 0}
+        onBack={onBackList}
+        onComplete={() => onComplete(lesson.id, lesson.reward)}
+      />
+    );
+  }
+  return <LessonListView lessons={lessons} progressMap={progressMap} onOpen={onOpen} />;
+}
+
+function LessonListView({ lessons, progressMap, onOpen }) {
   return (
     <motion.section
-      key="lesson"
+      key="lesson-list"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
-      {lessonCards.map((c) => (
-        <Card key={c.id} className={`${panel} ${goldRing}`}>
+      {lessons.map((l) => (
+        <Card key={l.id} className={`${panel} ${goldRing}`}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-slate-50">
-              {c.title}
+              {l.title}
               <div className="space-x-2">
-                {c.chips.map((t) => (
+                {l.tags.map((t) => (
                   <Badge key={t} className="bg-indigo-500/20 text-indigo-200 border border-indigo-400/20">{t}</Badge>
                 ))}
               </div>
@@ -402,16 +544,77 @@ function LessonView({ onReward }) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm text-slate-300/90">
-              카드를 눌러 수업을 시작해요. 끝까지 들으면 코인을 받을 수 있어요!
+              총 {l.sections.length}개 섹션 · 완료 보상 {l.reward} 코인
             </div>
-            <Progress value={c.progress} className="h-2 bg-slate-800" />
-            <div className="text-xs text-slate-400">진도 {c.progress}%</div>
-            <Button className="w-full bg-amber-400 text-slate-900 hover:bg-amber-300" onClick={onReward}>
-              수업 듣기 & 코인 받기
+            <Progress value={progressMap[l.id] || 0} className="h-2 bg-slate-800" />
+            <div className="text-xs text-slate-400">진도 {progressMap[l.id] || 0}%</div>
+            <Button variant="solid" className="w-full" onClick={() => onOpen(l.id)}>
+              <Play className="inline -mt-0.5 mr-1 h-4 w-4" /> 수업 듣기
             </Button>
           </CardContent>
         </Card>
       ))}
+    </motion.section>
+  );
+}
+
+function LessonDetailView({ lesson, progress, onBack, onComplete }) {
+  const [idx, setIdx] = useState(0);
+  const isLast = idx >= lesson.sections.length - 1;
+
+  const next = () => {
+    if (!isLast) setIdx((v) => v + 1);
+  };
+
+  const finish = () => {
+    onComplete();
+    onBack();
+  };
+
+  const s = lesson.sections[idx];
+
+  return (
+    <motion.section
+      key={`lesson-${lesson.id}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="mx-auto grid max-w-3xl gap-4"
+    >
+      <div className={`${panel} p-5 ${goldRing} ${tileGrad}`}>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-50">{lesson.title}</h2>
+          <Badge className="bg-amber-400/20 text-amber-100 border border-amber-400/30">
+            <Award className="h-3.5 w-3.5 mr-1" /> 완료 보상 {lesson.reward}
+          </Badge>
+        </div>
+
+        <div className="text-sm text-slate-300/90">섹션 {idx + 1} / {lesson.sections.length}</div>
+        <Progress value={Math.round(((idx) / lesson.sections.length) * 100)} className="my-2" />
+
+        <div className="mt-2 rounded-xl bg-slate-900/60 ring-1 ring-white/10 p-4 space-y-2">
+          <div className="text-base font-semibold text-slate-50">{s.h}</div>
+          <p className="text-slate-300/90 leading-relaxed">{s.body}</p>
+          <div className="rounded-lg bg-slate-800/60 ring-1 ring-white/10 p-3 text-sm">
+            <span className="font-semibold text-amber-200">예시: </span>
+            <span className="text-slate-200">{s.example}</span>
+          </div>
+          <div className="rounded-lg bg-indigo-500/10 ring-1 ring-indigo-300/20 p-3 text-sm">
+            <span className="font-semibold text-indigo-200">미니 미션: </span>
+            <span className="text-slate-200">{s.mission}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <Button variant="dark" onClick={onBack}><BookOpenCheck className="inline mr-1 h-4 w-4" /> 목록으로</Button>
+          {!isLast ? (
+            <Button variant="indigo" onClick={next}>다음 섹션 ▶</Button>
+          ) : (
+            <Button variant="solid" onClick={finish}>수업 완료하고 보상 받기 🎉</Button>
+          )}
+        </div>
+      </div>
     </motion.section>
   );
 }
@@ -445,8 +648,9 @@ function QuizView({ onCorrect }) {
               <button
                 key={i}
                 type="button"
-                className={`bg-transparent rounded-xl px-4 py-3 text-left ring-1 transition ${isCorrect ? "bg-emerald-500/20 ring-emerald-300/30 text-emerald-200" : ""} ${isWrongSel ? "bg-rose-500/20 ring-rose-300/30 text-rose-200" : ""} ${!isCorrect && !isWrongSel ? "bg-slate-900/60 ring-white/10 hover:bg-white/5" : ""}`}
                 onClick={() => choose(i)}
+                className={`rounded-xl px-4 py-3 text-left ring-1 transition bg-transparent ${isCorrect ? "bg-emerald-500/20 ring-emerald-300/30 text-emerald-200" : ""} ${isWrongSel ? "bg-rose-500/20 ring-rose-300/30 text-rose-200" : ""} ${!isCorrect && !isWrongSel ? "bg-slate-900/60 ring-white/10 hover:bg-white/5" : ""}`}
+                style={{ WebkitAppearance: "none" }}
               >
                 {ch}
               </button>
@@ -458,8 +662,8 @@ function QuizView({ onCorrect }) {
           {status === "wrong" && (<span className="text-rose-200">앗, 다시 생각해볼까요? 힌트: {card.tip}</span>)}
         </div>
         <div className="mt-4 flex gap-2">
-          <Button className={`bg-indigo-400 text-slate-950 hover:bg-indigo-300 ${status === "correct" ? "" : "opacity-50 cursor-not-allowed"}`} disabled={status !== "correct"} onClick={next}>다음 문제 ▶</Button>
-          <Button className="bg-slate-800 ring-1 ring-white/10 hover:bg-slate-700" onClick={() => { setSelected(null); setStatus("idle"); }}>다시 고르기</Button>
+          <Button variant="indigo" className={`${status !== "correct" ? "opacity-50 cursor-not-allowed" : ""}`} disabled={status !== "correct"} onClick={next}>다음 문제 ▶</Button>
+          <Button variant="dark" onClick={() => { setSelected(null); setStatus("idle"); }}>다시 고르기</Button>
         </div>
       </div>
     </motion.section>
@@ -589,7 +793,6 @@ function InvestView({ coins, setCoins, stocks, setStocks, portfolio, setPortfoli
               return (
                 <div key={s.symbol} className="flex items-center justify-between rounded-lg bg-slate-900/50 p-3 ring-1 ring-white/10">
                   <div className="min-w-0">
-                    {/* 버튼 대신 div role="button"로 변경 → 기본 흰 배경 완전 제거 */}
                     <div
                       role="button"
                       tabIndex={0}
@@ -606,8 +809,8 @@ function InvestView({ coins, setCoins, stocks, setStocks, portfolio, setPortfoli
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button className="bg-emerald-500 text-white hover:bg-emerald-400" onClick={() => buy(s)}>사자</Button>
-                    <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => sell(s)}>팔자</Button>
+                    <Button variant="success" onClick={() => buy(s)}>사자</Button>
+                    <Button variant="danger" onClick={() => sell(s)}>팔자</Button>
                   </div>
                 </div>
               );
@@ -620,43 +823,13 @@ function InvestView({ coins, setCoins, stocks, setStocks, portfolio, setPortfoli
       <div className="space-y-4">
         {/* 총합 요약 */}
         <div className={`${panel} p-4`}>
-          <div className="text-sm text-slate-400">총 자산</div>
-          <div className="text-2xl font-extrabold">{totalValue.toLocaleString()} 코인</div>
-          <div className={`text-sm ${totalReturnPct >= 0 ? "text-emerald-300" : "text-rose-300"}`}>총 수익률 {totalReturnPct.toFixed(1)}%</div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded-lg bg-slate-900/50 p-2 ring-1 ring-white/10">현금: {coins}</div>
-            <div className="rounded-lg bg-slate-900/50 p-2 ring-1 ring-white/10">보유자산: {holdingsValue}</div>
-          </div>
+          <HoldingsSummary coins={coins} holdingsValue={holdingsValue} totalValue={totalValue} totalReturnPct={totalReturnPct} />
         </div>
 
         {/* 포트폴리오 테이블 + CSS 도넛 파이 */}
         <div className={`${panel} p-4`}>
           <h2 className="font-bold mb-2">내 포트폴리오</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-slate-400">
-                <th className="text-left">종목</th><th>수량</th><th>평단</th><th>현재가</th><th>수익률</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(portfolio).map(([sym, { qty, avg }]) => {
-                if (qty <= 0) return null;
-                const stock = stocks.find((s) => s.symbol === sym);
-                const profit = avg > 0 ? ((stock.price - avg) / avg) * 100 : 0;
-                return (
-                  <tr key={sym}>
-                    <td className="py-1">{stock?.name || sym}</td>
-                    <td className="text-center">{qty}</td>
-                    <td className="text-center">{avg.toFixed(1)}</td>
-                    <td className="text-center">{stock.price}</td>
-                    <td className={`text-center ${profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>{profit.toFixed(1)}%</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {/* 도넛 파이 */}
+          <PortfolioTable portfolio={portfolio} stocks={stocks} />
           {pie.legend.length > 0 && (
             <div className="mt-4 flex items-center gap-4">
               <div className="relative h-40 w-40 rounded-full" style={pie.style}>
@@ -677,10 +850,59 @@ function InvestView({ coins, setCoins, stocks, setStocks, portfolio, setPortfoli
         </div>
 
         <div className="flex justify-center">
-          <Button className="bg-indigo-500 text-white hover:bg-indigo-400" onClick={nextDay}>다음날 ▶</Button>
+          <Button variant="indigo" onClick={nextDay}>다음날 ▶</Button>
         </div>
       </div>
     </motion.section>
+  );
+}
+
+function HoldingsSummary({ coins, holdingsValue, totalValue, totalReturnPct }) {
+  return (
+    <>
+      <div className="text-sm text-slate-400">총 자산</div>
+      <div className="text-2xl font-extrabold">{totalValue.toLocaleString()} 코인</div>
+      <div className={`text-sm ${totalReturnPct >= 0 ? "text-emerald-300" : "text-rose-300"}`}>총 수익률 {totalReturnPct.toFixed(1)}%</div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-lg bg-slate-900/50 p-2 ring-1 ring-white/10">현금: {coins}</div>
+        <div className="rounded-lg bg-slate-900/50 p-2 ring-1 ring-white/10">보유자산: {holdingsValue}</div>
+      </div>
+    </>
+  );
+}
+
+function PortfolioTable({ portfolio, stocks }) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-slate-400">
+          <th className="text-left">종목</th>
+          <th>수량</th>
+          <th>평단</th>
+          <th>현재가</th>
+          <th>수익률</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(portfolio).map(([sym, { qty, avg }]) => {
+          if (qty <= 0) return null;
+          const stock = stocks.find((s) => s.symbol === sym);
+          const cur = stock?.price ?? 0;
+          const profit = avg > 0 ? ((cur - avg) / avg) * 100 : 0;
+          return (
+            <tr key={sym}>
+              <td className="py-1">{stock?.name || sym}</td>
+              <td className="text-center">{qty}</td>
+              <td className="text-center">{avg.toFixed(1)}</td>
+              <td className="text-center">{cur}</td>
+              <td className={`text-center ${profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {profit.toFixed(1)}%
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
