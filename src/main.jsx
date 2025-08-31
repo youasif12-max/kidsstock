@@ -3,7 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 // ⬇️ 여기만 v2로 바꾸세요
-import App from './KidsStockApp-v2.jsx'
+import App from './KidsStockApp.jsx'
 
 import './index.css'
 
