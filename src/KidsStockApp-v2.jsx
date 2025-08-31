@@ -8,7 +8,11 @@ import {
 
 /* ----------------------------- 공통 UI ---------------------------------- */
 const Button = ({ className = "", ...props }) => (
-  <button type="button" className={`px-4 py-2 rounded-xl font-medium ${className}`} {...props} />
+  <button
+    type="button"
+    className={`px-4 py-2 rounded-xl font-medium bg-transparent appearance-none focus:outline-none ${className}`}
+    {...props}
+  />
 );
 const Card = ({ className = "", children }) => (
   <div className={`rounded-2xl border border-white/10 bg-slate-900/50 ${className}`}>{children}</div>
@@ -567,13 +571,21 @@ function InvestView({ coins, setCoins, stocks, setStocks, portfolio, setPortfoli
               return (
                 <div key={s.symbol} className="flex items-center justify-between rounded-lg bg-slate-900/50 p-3 ring-1 ring-white/10">
                   <div className="min-w-0">
-                    <button onClick={()=>setSelectedStock(s)} className="text-left">
+                    {/* 버튼 대신 div role="button"로 변경 → 기본 흰 배경 완전 제거 */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedStock(s)}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSelectedStock(s)}
+                      className="text-left cursor-pointer rounded-md px-2 py-1 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-amber-300/30"
+                      style={{ background: "transparent" }}
+                    >
                       <div className="font-semibold truncate">{s.name}</div>
                       <div className="text-xs text-slate-400">{s.price} 코인</div>
                       {held > 0 && (
                         <div className="text-[11px] text-slate-400">보유 {held}주 · 수익률 {profit.toFixed(1)}%</div>
                       )}
-                    </button>
+                    </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button className="bg-emerald-500 text-white hover:bg-emerald-400" onClick={() => buy(s)}>사자</Button>
